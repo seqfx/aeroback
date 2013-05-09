@@ -1,7 +1,6 @@
 import os
 import importlib
 import tempfile
-import time
 import datetime
 
 #-----------------------------------------------------------------------
@@ -11,6 +10,7 @@ from aeroback.abstractions.a_state import A_State
 import aeroback.diagnostics.diagnostics as _D
 
 import aeroback.context.context as context
+import runlogr
 import jobconfr
 import storager
 
@@ -26,9 +26,26 @@ Required modules:
     -
 
 Children modules:
+    - runlogr
     - jobconfr
     - storager
 '''
+
+
+#-----------------------------------------------------------------------
+# States for other modules
+#-----------------------------------------------------------------------
+class States(object):
+
+    def __init__(self):
+        self.module = None
+
+        self.runlogr = None
+
+    def debug_vars(self):
+        return [
+                'module', self.module
+                ]
 
 
 #-----------------------------------------------------------------------
@@ -39,6 +56,7 @@ class Model(A_Model):
     def __init__(self):
         super(Model, self).__init__()
 
+        self.date = None
         self.date_str = None
         self.date_int = None
 
@@ -62,10 +80,9 @@ class State(A_State):
     def __init__(self, model):
         super(State, self).__init__()
         self.model = model
+        self.states = States()
 
         self.jobs = []
-
-        self.time_start = time.time()
 
     def debug_vars(self):
         return [
@@ -92,6 +109,7 @@ def _init_model(params):
     # Date string
     date = params.get('datetime', None)
     if date:
+        model.date = date
         model.date_str = date.strftime('%Y-%m-%d_%H-%M')
     else:
         msgs.append('datetime')
@@ -125,14 +143,6 @@ def _init_model(params):
 
 
 #-----------------------------------------------------------------------
-# Initialize state
-#-----------------------------------------------------------------------
-def _init_state(model):
-    state = State(model)
-    return state, 0, None
-
-
-#-----------------------------------------------------------------------
 # Initialize module
 #-----------------------------------------------------------------------
 def init(params):
@@ -148,11 +158,21 @@ def init(params):
             "App init"
             )
 
+    # Model
     model, err, msg = _init_model(params)
     if err:
         return None, err, msg
 
-    state, err, msg = _init_state(model)
+    # State
+    state = State(model)
+
+    # Runlogr state
+    runlogrstate, err, msg = runlogr.init(
+            os.path.join(model.dir_temp, '..', 'runlog.ini'))
+    if err:
+        return None, err, msg
+
+    state.states.runlogr = runlogrstate
 
     # Debug config
     _D.OBJECT(
@@ -322,6 +342,18 @@ def _exec_backup_type(state, storstate, params, dir_temp):
 #-----------------------------------------------------------------------
 # Execute job
 #-----------------------------------------------------------------------
+def _time_to_run(last_run, now, period):
+    if not last_run:
+        return True
+    if not period:
+        return True
+    period = datetime.timedelta(minutes = period)
+    return last_run + period > now
+
+
+#-----------------------------------------------------------------------
+# Execute job
+#-----------------------------------------------------------------------
 def _exec_job(state, job, job_n, jobs_count):
     # Init & exec each active storage
     err, msg = context.set_param('gsutil', job['gsutil'])
@@ -375,6 +407,34 @@ def _exec_job(state, job, job_n, jobs_count):
     # Report errors and keep working
     for backup in job['backups']:
         if backup['active']:
+
+            # Check previous backup finished
+            section_name = "{}:{}".format(backup['type'], backup['dirstorage'])
+            running = runlogr.get_section_item(
+                    state.states.runlogr, section_name, 'running_bool')
+            if running:
+                msg = "Previous run of the backup is still marked as running. If you believe that's not the case then manually change in section [{}] paramter 'running' to False in file: {}".format(runlogr.get_filepath(state.states.runlogr))
+                state.add_msg_error(msg)
+                _D.ERROR(__name__, "Another instance may still be running", 'msg', msg)
+                continue
+
+            # Check if time to run
+            # _time_to_run(last_run, now, period):
+            if not _time_to_run(
+                    runlogr.get_section_item(
+                        state.states.runlogr, section_name, 'last_run_time'),
+                    state.model.date,
+                    backup.get('frequency', None)):
+                # Time hasn't come yet, skip this backup
+                continue
+
+            # Update runlog with backup type
+            runlogr.set_section(
+                    state.states.runlogr,
+                    section_name,
+                    {'last_run_time': state.model.date, 'running_bool': True})
+
+            # Run backup on each storage
             for storstate in job['storstates']:
                 # Create unique temp directory inside dir_temp
                 dir_temp = tempfile.mkdtemp(dir = state.model.dir_temp)
@@ -391,6 +451,12 @@ def _exec_job(state, job, job_n, jobs_count):
                             'params', backup
                             )
                     continue
+
+            # Update runlog with app finish
+            runlogr.set_section(
+                    state.states.runlogr,
+                    section_name,
+                    {'running_bool': False})
 
     # ... done backup jobs ...
 
@@ -458,6 +524,26 @@ def execute(state):
             "App execute"
             )
 
+    # Execute runlogr
+    err, msg = runlogr.execute(state.states.runlogr)
+    if err:
+        _D.ERROR(__name__, "Error executing runlogr", 'msg', msg)
+        return 0, None
+
+    # Check if last run completed
+    running = runlogr.get_section_item(state.states.runlogr, 'app', 'running_bool')
+    if running:
+        msg = "Oops, exiting. Another instance of Aeroback is still marked as running. If you believe that's not the case then manually change in section [app] paramter 'running' to False in file: {}".format(runlogr.get_filepath(state.states.runlogr))
+        state.add_msg_error(msg)
+        _D.ERROR(__name__, "Another instance may still be running", 'msg', msg)
+        return 0, None
+
+    # Update runlog with app start
+    runlogr.set_section(
+            state.states.runlogr,
+            'app',
+            {'last_run_time': state.model.date, 'running_bool': True})
+
     # Read backup config files
     err, msg = _execute_config(state)
     if err:
@@ -496,6 +582,12 @@ def execute(state):
                     'msg', msg
                     )
 
+    # Update runlog with app finish
+    runlogr.set_section(
+            state.states.runlogr,
+            'app',
+            {'running_bool': False})
+
     return 0, None
 
 
@@ -510,8 +602,26 @@ def cleanup(state):
             )
 
     # Report execution time
-    time_exec = int(time.time() - state.time_start)
-    state.set_stats('Execution time, h:m:s', str(datetime.timedelta(seconds = time_exec)))
+    duration = datetime.datetime.today() - state.model.date
+    duration = int(duration.total_seconds())
+    state.set_stats('Execution time, h:m:s', str(datetime.timedelta(seconds = duration)))
+    '''
+    # Alternative method, very cool
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    print "%d:%02d:%02d" % (h, m, s)
+    '''
+
+    # Errors and warnings summary
+    count = _D.count_exceptions()
+    if count > 0:
+        state.add_msg_error("Exception(s) count: {}".format(count))
+    count = _D.count_errors()
+    if count > 0:
+        state.add_msg_error("Error(s) count: {}".format(count))
+    count = _D.count_warnings()
+    if count > 0:
+        state.add_msg_warning("Warning(s) count: {}".format(count))
 
     # Build backup summary
     _D.SUMMARY(

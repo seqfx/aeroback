@@ -45,11 +45,40 @@ class State(A_State):
 
 
 #-----------------------------------------------------------------------
+# Get statistics
+#-----------------------------------------------------------------------
+def count_exceptions():
+    if _state:
+        return _state.count_exc
+    else:
+        return -1
+
+
+#-----------------------------------------------------------------------
+def count_errors():
+    if _state:
+        return _state.count_err
+    else:
+        return -1
+
+
+#-----------------------------------------------------------------------
+def count_warnings():
+    if _state:
+        return _state.count_warn
+    else:
+        return -1
+
+
+#-----------------------------------------------------------------------
 def _append_var(atype, out, label, value):
     xtermr.add_var(out, label, value)
-    htmlr.add_var(_state.model.htmlrstate, atype, label, value)
+    if _state:
+        htmlr.add_var(_state.model.htmlrstate, atype, label, value)
 
 
+#-----------------------------------------------------------------------
+# Builders
 #-----------------------------------------------------------------------
 def _build(atype, class_name, comment, *args):
     out = []
@@ -62,7 +91,8 @@ def _build(atype, class_name, comment, *args):
     xtermr.add_title(atype, out, comment)
 
     # HTMLr open unit
-    htmlr.open_unit(_state.model.htmlrstate, atype, class_name, comment)
+    if _state:
+        htmlr.open_unit(_state.model.htmlrstate, atype, class_name, comment)
 
     # Variables
     count = len(args) / 2
@@ -78,7 +108,8 @@ def _build(atype, class_name, comment, *args):
     logging.debug('\n'.join(out))
 
     # HTMLr close unit
-    htmlr.close_unit(_state.model.htmlrstate, atype)
+    if _state:
+        htmlr.close_unit(_state.model.htmlrstate, atype)
 
 
 #-----------------------------------------------------------------------
@@ -94,7 +125,8 @@ def _build_object(class_name, comment, obj):
     xtermr.add_title(atype, out, comment)
 
     # HTMLr open unit
-    htmlr.open_unit(_state.model.htmlrstate, atype, class_name, comment)
+    if _state:
+        htmlr.open_unit(_state.model.htmlrstate, atype, class_name, comment)
 
     # Variables
     debug_vars = getattr(obj, 'debug_vars', None)
@@ -116,7 +148,8 @@ def _build_object(class_name, comment, obj):
     logging.debug('\n'.join(out))
 
     # HTMLr close unit
-    htmlr.close_unit(_state.model.htmlrstate, atype)
+    if _state:
+        htmlr.close_unit(_state.model.htmlrstate, atype)
 
 
 #-----------------------------------------------------------------------
@@ -132,7 +165,8 @@ def _build_exception(class_name, comment):
     xtermr.add_title(atype, out, comment)
 
     # HTMLr open unit
-    htmlr.open_unit(_state.model.htmlrstate, atype, class_name, comment)
+    if _state:
+        htmlr.open_unit(_state.model.htmlrstate, atype, class_name, comment)
 
     # Get exception info
     (exc_type, exc_value, exc_traceback) = sys.exc_info()
@@ -159,13 +193,15 @@ def _build_exception(class_name, comment):
         t_func = t[2]
         t_text = t[3]
         xtermr.add_stack_trace_entry(out, t_file, t_line, t_func, t_text)
-        htmlr.add_stack_trace_entry(_state.model.htmlrstate, t_file, t_line, t_func, t_text)
+        if _state:
+            htmlr.add_stack_trace_entry(_state.model.htmlrstate, t_file, t_line, t_func, t_text)
 
     # Output to logger
     logging.debug('\n'.join(out))
 
     # HTMLr close unit
-    htmlr.close_unit(_state.model.htmlrstate, atype)
+    if _state:
+        htmlr.close_unit(_state.model.htmlrstate, atype)
 
 
 #-----------------------------------------------------------------------
@@ -178,8 +214,9 @@ def _build_summary(title, descriptors, stats, infos, warnings, errors):
     '''
 
     # HTMLr
-    htmlr.add_summary(_state.model.htmlrstate,
-            title, descriptors, stats, infos, warnings, errors)
+    if _state:
+        htmlr.add_summary(_state.model.htmlrstate,
+                title, descriptors, stats, infos, warnings, errors)
 
 
 #-----------------------------------------------------------------------
@@ -293,3 +330,15 @@ def execute(state):
 def cleanup(state):
     '''Cleanup state'''
     pass
+
+
+#-----------------------------------------------------------------------
+# Fall back logging config: print to screen
+#-----------------------------------------------------------------------
+'''
+print "LOG DEFAULT CONFIG >>>>> SCREEN"
+logging.basicConfig(
+        level = logging.DEBUG,
+        format = '%(message)s'
+        )
+'''

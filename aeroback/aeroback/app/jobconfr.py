@@ -195,6 +195,23 @@ def _parse_storages(parser, params):
 
 
 #-------------------------------------------------------------------
+# Get optional frequency
+#-------------------------------------------------------------------
+def _optional_frequency(parser, name, sid, backup):
+    if not parser.has_option(name, 'frequency', sid):
+        return 0, None
+    freq = parser.get(name, 'frequency', sid)
+    if not freq:
+        return 0, None
+    mins, err, msg = parseutil.hours_minutes(freq)
+    if err:
+        return err, msg
+    else:
+        backup['frequency'] = mins
+        return 0, None
+
+
+#-------------------------------------------------------------------
 # Parse backup types
 #-------------------------------------------------------------------
 def _add_backup_db_mongo(parser, params, atype, name, sid):
@@ -215,7 +232,13 @@ def _add_backup_db_mongo(parser, params, atype, name, sid):
     backup['password'] = parser.get(name, 'password', sid)
     backup['host'] = parser.get(name, 'host', sid)
 
+    # Optional: frequency
+    err, msg = _optional_frequency(parser, name, sid, backup)
+    if err:
+        return err, msg
+
     _add_to_list(params, 'backups', backup)
+    return 0, None
 
 
 def _add_backup_db_mysql(parser, params, atype, name, sid):
@@ -230,7 +253,13 @@ def _add_backup_db_mysql(parser, params, atype, name, sid):
     backup['password'] = parser.get(name, 'password', sid)
     backup['host'] = parser.get(name, 'host', sid)
 
+    # Optional: frequency
+    err, msg = _optional_frequency(parser, name, sid, backup)
+    if err:
+        return err, msg
+
     _add_to_list(params, 'backups', backup)
+    return 0, None
 
 
 def _add_backup_dir_compress(parser, params, atype, name, sid):
@@ -243,7 +272,13 @@ def _add_backup_dir_compress(parser, params, atype, name, sid):
     backup['history'] = parser.getint(name, 'history', sid)
     backup['dirs'] = parseutil.split_csv_lexer(parser.get(name, 'dirs', sid), '\n')
 
+    # Optional: frequency
+    err, msg = _optional_frequency(parser, name, sid, backup)
+    if err:
+        return err, msg
+
     _add_to_list(params, 'backups', backup)
+    return 0, None
 
 
 def _add_backup_dir_increment(parser, params, atype, name, sid):
@@ -258,7 +293,13 @@ def _add_backup_dir_increment(parser, params, atype, name, sid):
     backup['includes'] = parseutil.split_csv_lexer(parser.get(name, 'includes', sid), '\n')
     backup['excludes'] = parseutil.split_csv_lexer(parser.get(name, 'excludes', sid), '\n')
 
+    # Optional: frequency
+    err, msg = _optional_frequency(parser, name, sid, backup)
+    if err:
+        return err, msg
+
     _add_to_list(params, 'backups', backup)
+    return 0, None
 
 
 #-------------------------------------------------------------------
@@ -297,9 +338,8 @@ def _parse_backup(parser, params, section_type, section_name, section_id):
     if not pfunc:
         return 1, "No parser implemented for backup: {}".format(section_name)
 
-    pfunc(parser, params, section_type, section_name, section_id)
-
-    return 0, None
+    err, msg = pfunc(parser, params, section_type, section_name, section_id)
+    return err, msg
 
 
 #-------------------------------------------------------------------

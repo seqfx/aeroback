@@ -24,6 +24,31 @@ def bytesize(s):
         return -1
 
 
+#-----------------------------------------------------------------------
+# Parse time in minutes and hours
+#-----------------------------------------------------------------------
+def hours_minutes(s):
+    """Parses strings like 15, 1h00, 1h, 0h30"""
+
+    # All digits, simple case
+    if s.isdigit():
+        return int(s)
+
+    # Parse string
+    idx = s.index('h')
+    if idx == -1:
+        idx = s.index('H')
+        if idx == -1:
+            return -1
+
+    try:
+        hours = int(s[:idx])
+        mins = int(s[idx + 1:])
+        return hours * 60 + mins, 0, None
+    except:
+        return None, 1, "Wrong time format: {}. Accepted format: 1h15".format(s)
+
+
 #-------------------------------------------------------------------
 # Split comma separated list
 #-------------------------------------------------------------------
