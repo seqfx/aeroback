@@ -74,6 +74,10 @@ Checkout aeroback somewhere on your disk with
 ```
 git clone https://github.com/seqfx/aeroback.git
 ```
+Make script executable
+```
+chmod +x <aeroback_install_dir>/aeroback/aeroback/aeroback.py
+```
 
 How to Configure Backup
 -----------------------
@@ -170,6 +174,13 @@ Edit cron file via `crontab -e` and add
 0 */8 * * * <your_homedir>/aeroback/aeroback/aeroback.py
 ```
 This example will run Aeroback every 8 hours.
+
+Controlling of backup execution frequency
+-----------------------------------------
+Each backup can have an optional `frequency` parameter that designates minimum period since last execution of that particulat backup type after which backup may be executed again. To put it simpler, how often you want this backup to run.
+Accepted values are hours and minutes separated by 'h'. For example, 0h15, 1h00, 3h15.
+This option allows for finer granularity. You may want your MongoDB backups to run every 4h, while incremental backup needs to run every hour. Achieve this by setting `frequency` option for each backup type and set crontab to the smallest slice of time. **Important:** Aeroback will not run if previous backup hasn't finished.
+
 
 Detailed Configuration guide
 ----------------------------
