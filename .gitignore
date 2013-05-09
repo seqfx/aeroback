@@ -4,5 +4,6 @@
 env
 env*
 dist
-aeroback._my_*
+_my_*
+A_*
 aeroback.work
