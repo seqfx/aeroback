@@ -6,8 +6,9 @@ Backup or move your server data or desktop files to Amazon S3 or Google Storage.
 
 Why this script?
 ----------------
-My server has accumulated a lot of GB of data that I needed to store long term. However, the problem was my server's monthly bandwidth allowance which I couldn't exceed. 
-Aeroback migrates data in installments that you control. This allows for a gradual transition to the cloud storage while keeping your server running and receiving new data.
+My server has accumulated a lot of GB of data that I needed to store long term. However, the problem was my server's monthly bandwidth allowance which I couldn't exceed.
+
+**Aeroback migrates data in installments that you control.** This allows for a gradual transition to the cloud storage while keeping your server running and receiving new data.
 
 ###Main features:
 * Set limit of upload amount per session
@@ -196,8 +197,7 @@ One or two storages can be used simultaneously. Example:
 `dirstorage` is a directory inside the bucket. Highly recommended to have different directories for different machines.
 
 ####Incremental Files Backup
-*This section can be repeated several times for different directories*
-Incrementally uploads all new/changed files to storage. Example:
+**This section can be repeated several times for different directories.** Incrementally uploads all new/changed files to storage. Example:
 ```
 [backup_dir_increment]
     active = true
@@ -218,7 +218,7 @@ Incrementally uploads all new/changed files to storage. Example:
 
 `maxupload` limits upload amount per session. The format is g or G for gigabytes (`5g`), m or M for megabytes (`5M`), k or K for kilobytes (`5k`), or one can use all digits like `314159265359`.
 
-`includes` is a list of subdirectories to include in backup. *Important:* includes always overrides following excludes; meaning if at least one include is provided then no excludes will be take into account.
+`includes` is a list of subdirectories to include in backup. **Important:** includes always overrides following excludes; meaning if at least one include is provided then no excludes will be take into account.
 
 `excludes` is a list of subdirectories to exclude from backup. Only considered if `includes` list is empty
 
@@ -226,7 +226,7 @@ Incrementally uploads all new/changed files to storage. Example:
 
 Compressed Directory Backup
 ---------------------------
-A single directory or multpiple directories gets compressed and time stamp added. Handy for keeping a history of multiple versions. For example:
+**This section can be repeated several times for different directories.** A single directory or multpiple directories gets compressed and time stamp added. Handy for keeping a history of multiple versions. For example:
 ```
 [backup_dir_compress]         
     active = true
