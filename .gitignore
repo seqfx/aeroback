@@ -6,3 +6,4 @@ env*
 dist
 _my_*
 aeroback.work
+aeroback.config/*.ini

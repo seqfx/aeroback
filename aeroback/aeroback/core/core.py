@@ -307,7 +307,7 @@ def execute(state):
             )
 
     # Configure email notification
-    emailrparams, err, msg = emailconfr.parse(os.path.join(state.dir_config, '_my_notify-email.ini'))
+    emailrparams, err, msg = emailconfr.parse(os.path.join(state.dir_config, 'notify-email.ini'))
     if err:
         return err, msg
 

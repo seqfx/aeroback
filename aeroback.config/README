@@ -1,0 +1,13 @@
+Place your config files here
+----------------------------
+Use EXAMPLES as a guide and create your own configs in this folder:
+
+
+What must be present:
+---------------------
+1) notify-email.ini
+2) one or more backup config files matching this pattern: *.ini 
+
+WARNING
+-------
+If no (1) and (2) are present then the application WILL NOT RUN.

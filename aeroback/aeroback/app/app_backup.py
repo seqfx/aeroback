@@ -187,16 +187,21 @@ def _execute_config(state):
     # Find all config files
     cfgs = []
     for root, subfolders, files in os.walk(state.model.dir_config):
+        if root.find('EXAMPLES') != -1:
+            continue
         for f in files:
             # Skip inactive files
             if f.startswith('OFF'):
                 continue
             # Skip notify config files
-            if f.startswith('_my_notify'):
+            if f.startswith('notify-'):
                 continue
             # Add file to list if has matching extension
-            if f.startswith('_my') and f.endswith('.ini'):
+            if f.endswith('.ini'):
                 cfgs.append(os.path.join(root, f))
+
+    if not cfgs:
+        return 1, "No valid configs found in {}".format(state.model.dir_config)
 
     # Parse found config files
     config_names = []
@@ -227,6 +232,9 @@ def _execute_config(state):
                     "Skipping not matching config",
                     'msg', msg
                     )
+
+    if not state.jobs:
+        return 1, "No configuration files were parsed"
 
     # Descriptor reporting
     state.set_descriptor('Configuration', config_names)
