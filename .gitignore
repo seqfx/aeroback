@@ -1,0 +1,8 @@
+.DS_Store
+*.pyc
+*.pyo
+env
+env*
+dist
+aeroback._my_*
+aeroback.work
