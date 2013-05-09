@@ -13,8 +13,8 @@ My server has accumulated a lot of GB of data that I needed to store long term. 
 ###Main features:
 * Set limit of upload amount per session
 * Neatly organizes several machines' backups in the same bucket
-* Easily configurable via simple .ini file
-* Recognizes machine it is being run on
+* Easily configurable via simple .ini file(s)
+* Recognizes machine it is being run on (all configs in one location)
 * Emails detailed report when done (optional)
 
 ###Supported backup types:
@@ -38,8 +38,8 @@ For example:
     maxupload = 1g
     includes =
     excludes = 
-          work/temp
-          cache
+            work/temp
+            cache
     description = Audio files
 ```
 To limit upload set `maxupload`. The format is g or G for gigabytes (`5g`), m or M for megabytes (`5M`), k or K for kilobytes (`5k`), or one can use all digits like `314159265359`.
@@ -77,7 +77,16 @@ git clone https://github.com/seqfx/aeroback.git
 
 How to Configure Backup
 -----------------------
-Configuration files are located in `aeroback.config` folder. Configuration for multiple machines can be stored there making it easier to setup (for example) two backups: one for your development box and another for a server.
+Configuration files are located in `aeroback.config` directory. 
+
+Initially the config directory only has `EXAMPLES` subdirectory. Your need to use those examples to create:
+* `notify-email.ini` with your email settings
+* at least one `<filename>.ini` with backup settings
+
+**If any of these files files are absent the script will not run.**
+
+`aeroback.config` is the place to put configuration files for one or several machines. Aeroback will execute only relevant configuratons. This approach makes it easier to setup several machine backups. For example, one for your development box and another for a server.
+
 Each setup is an `.ini` file usually following this naming convention `_home_<your_username>.ini`.
 *Important: * to ignore some config files prepend their name with `OFF`, for example `OFF_home_ben.ini`.
 Aeroback recognizes machine by a presence of a relevant directory that is specified in each config file:
@@ -197,7 +206,7 @@ One or two storages can be used simultaneously. Example:
 `dirstorage` is a directory inside the bucket. Highly recommended to have different directories for different machines.
 
 ####Incremental Files Backup
-**This section can be repeated several times for different directories.** Incrementally uploads all new/changed files to storage. Example:
+**This configuration section can be repeated several times for different directories.** Incrementally uploads all new/changed files to storage. Example:
 ```
 [backup_dir_increment]
     active = true
@@ -226,7 +235,7 @@ One or two storages can be used simultaneously. Example:
 
 Compressed Directory Backup
 ---------------------------
-**This section can be repeated several times for different directories.** A single directory or multpiple directories gets compressed and time stamp added. Handy for keeping a history of multiple versions. For example:
+**This configuration section can be repeated several times for different directories.** A single directory or multpiple directories gets compressed and time stamp added. Handy for keeping a history of multiple versions. For example:
 ```
 [backup_dir_compress]         
     active = true
@@ -279,6 +288,11 @@ For example:
 `user`, `password`, `host` are standard DB connection parameters
 
 `description` is a free text, not currently used anywhere
+
+Development options
+-------------------
+Aeroback can be run in a 'dry' mode meaning no actual data will be send to/from the storages. It's a good way to test that your configuration is working before attempting to send any data. Run the script with `-dry` option:
+`<your_homedir>/aeroback/aeroback/aeroback.py -dry`
 
 The End
 -------
