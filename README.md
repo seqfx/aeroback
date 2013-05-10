@@ -1,6 +1,6 @@
 Aeroback
 ========
-Backup/migrate your data to Amazon S3/Google Storage
+Backup/migrate your data to Amazon S3 and Google Storage
 ----------------------------------------------------
 Backup or move your server data or desktop files to Amazon S3 or Google Storage. This Python 2.7 script is easily configurable and supports compressed and incremental directory backup/migration to cloud storages.
 
@@ -44,8 +44,13 @@ For example:
 ```
 To limit upload set `maxupload`. The format is g or G for gigabytes (`5g`), m or M for megabytes (`5M`), k or K for kilobytes (`5k`), or one can use all digits like `314159265359`.
 
-Dependencies & trying Aeroback without installing them
-------------------------------------------------------
+Dependencies & trying Aeroback without installing gsutil
+--------------------------------------------------------
+
+Only two dependencies:
+* **SQLite** database engine
+* **gsutil** for Amazon S3 and Google Storage access
+
 Aeroback uses SQLite database engine which is normally present on most machines. If not, read [SQLite site](http://sqlite.org/) about how to get one.
 
 External command `gsutil` needs to be present to access Amazon S3 and Google Storage. Read [gsutil project page](https://developers.google.com/storage/docs/gsutil) for more details.
