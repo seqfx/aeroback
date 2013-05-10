@@ -44,14 +44,23 @@ For example:
 ```
 To limit upload set `maxupload`. The format is g or G for gigabytes (`5g`), m or M for megabytes (`5M`), k or K for kilobytes (`5k`), or one can use all digits like `314159265359`.
 
-Dependencies
-------------
+Dependencies & trying Aeroback without installing them
+------------------------------------------------------
+Aeroback uses SQLite database engine which is normally present on most machines. If not, read [SQLite site](http://sqlite.org/) about how to get one.
+
 External command `gsutil` needs to be present to access Amazon S3 and Google Storage. Read [gsutil project page](https://developers.google.com/storage/docs/gsutil) for more details.
 
-How to Install
---------------
+But there is no need to install and configure `gsutil` to get a feel how Aeroback works. Skip next section "How to install gstuil" and proceed to Aeroback installation and configuration. When done, run Aeroback in dry mode:
+```
+<aeroback_install_dir>/aeroback/aeroback/aeroback.py -dry
+```
+It will do all necessarily operations except for actually storing data to the storage. A very handy option to test before configuring further.
+
+How to install gsutil
+---------------------
 ###Install gsutil
 [Follow this guide](https://developers.google.com/storage/docs/gsutil_install) to install `gsutil`.
+
 ###Configure gsutil
 Execute 
 ```
@@ -69,6 +78,8 @@ aws_secret_access_key = <your access key>
 ```
 Optionally, add `gsutil` to your system `PATH` or skip this step and set gsutil location in the Aeroback configuration file (easier for a server running Aeroback as a cron job).
 
+How to install Aeroback
+-----------------------
 ###Get Aeroback
 Checkout aeroback somewhere on your disk with 
 ```
