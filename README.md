@@ -26,7 +26,7 @@ My server has accumulated a lot of GB of data that I needed to store long term. 
 * Amazon S3
 * Google Storage
 
-Example of Incremental Files Backup
+Example of incremental files backup
 -----------------------------------
 This is the main cause for writing this script. Specify a directory, its optional include/exclude subdirectories and set a limit of upload per session.
 For example:
@@ -52,7 +52,7 @@ External command `gsutil` needs to be present to access Amazon S3 and Google Sto
 
 But there is no need to install and configure `gsutil` to get a feel how Aeroback works. Skip next section "How to install gstuil" and proceed to Aeroback installation and configuration. When done, run Aeroback in dry mode:
 ```
-<aeroback_install_dir>/aeroback/aeroback/aeroback.py -dry
+<aeroback_install_dir>/aeroback/aeroback.py -dry
 ```
 It will do all necessarily operations except for actually storing data to the storage. A very handy option to test before configuring further.
 
@@ -81,13 +81,12 @@ Optionally, add `gsutil` to your system `PATH` or skip this step and set gsutil 
 How to install Aeroback
 -----------------------
 ###Get Aeroback
-Checkout aeroback somewhere on your disk with 
+Checkout aeroback somewhere on your disk and make the script executable
 ```
+mkdir <aeroback_install_dir>
+cd <aeroback_install_dir>
 git clone https://github.com/seqfx/aeroback.git
-```
-Make script executable
-```
-chmod +x <aeroback_install_dir>/aeroback/aeroback/aeroback.py
+chmod +x aeroback/aeroback.py
 ```
 
 How to Configure Backup
