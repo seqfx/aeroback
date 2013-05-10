@@ -93,11 +93,11 @@ How to Configure Backup
 -----------------------
 Configuration files are located in `aeroback.config` directory. 
 
-Initially the config directory only has `EXAMPLES` subdirectory. Your need to use those examples to create:
+Initially the config directory only has `EXAMPLES` subdirectory. Your need to use those examples to create your config files **inside `aeroback.config` directory**:
 * `notify-email.ini` with your email settings
 * at least one `<filename>.ini` with backup settings
 
-**If any of these files files are absent the script will not run.**
+**If any of these files files are absent the script will complain and will not run.**
 
 `aeroback.config` is the place to put configuration files for one or several machines. Aeroback will execute only relevant configurations. This approach makes it easier to setup several machine backups. For example, one for your development box and another for a server.
 
