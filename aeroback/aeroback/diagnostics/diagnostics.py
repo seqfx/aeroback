@@ -237,7 +237,8 @@ def DEBUG(class_name, comment, *args):
 # WARNING
 #-----------------------------------------------------------------------
 def WARNING(class_name, comment, *args):
-    _state.count_warn += 1
+    if _state:
+        _state.count_warn += 1
     _build('warning', class_name, comment, *args)
 
 
@@ -245,7 +246,8 @@ def WARNING(class_name, comment, *args):
 # ERROR
 #-----------------------------------------------------------------------
 def ERROR(class_name, comment, *args):
-    _state.count_err += 1
+    if _state:
+        _state.count_err += 1
     _build('error', class_name, comment, *args)
 
 
@@ -253,7 +255,8 @@ def ERROR(class_name, comment, *args):
 # EXCEPTION
 #-----------------------------------------------------------------------
 def EXCEPTION(class_name, comment):
-    _state.count_exc += 1
+    if _state:
+        _state.count_exc += 1
     _build_exception(class_name, comment)
 
 
@@ -335,10 +338,18 @@ def cleanup(state):
 #-----------------------------------------------------------------------
 # Fall back logging config: print to screen
 #-----------------------------------------------------------------------
-'''
-print "LOG DEFAULT CONFIG >>>>> SCREEN"
-logging.basicConfig(
-        level = logging.DEBUG,
-        format = '%(message)s'
-        )
-'''
+def configure_for_tests():
+    """
+    Simplest possible configuration that is only for screen output.
+    Do not mix proper configuration with this call, otherwise
+    mutliple outputs will happen.
+    """
+    if _state:
+        WARNING(__name__, "Diagnostics already configured, ignoring test configuration request")
+        return
+
+    print "LOG DEFAULT CONFIG >>>>> SCREEN"
+    logging.basicConfig(
+            level = logging.DEBUG,
+            format = '%(message)s'
+            )

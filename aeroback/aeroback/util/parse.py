@@ -30,23 +30,37 @@ def bytesize(s):
 def hours_minutes(s):
     """Parses strings like 15, 1h00, 1h, 0h30"""
 
-    # All digits, simple case
+    # All digits means minutes
     if s.isdigit():
-        return int(s)
+        try:
+            return int(s)
+        except:
+            return None, 1, "Wrong time supplied: '{}'. Examples of accepted values: 1h15, 15, 3h".format(s)
 
-    # Parse string
-    idx = s.index('h')
+    # If 'h|H' separator is present
+    idx = s.find('h')
     if idx == -1:
-        idx = s.index('H')
+        idx = s.find('H')
         if idx == -1:
-            return -1
+            return None, 1, "Wrong time supplied: '{}'. Examples of accepted values: 1h15, 15, 3h".format(s)
 
     try:
-        hours = int(s[:idx])
-        mins = int(s[idx + 1:])
+        hours = s[:idx]
+        mins = s[idx + 1:]
+
+        if hours:
+            hours = abs(int(hours))
+        else:
+            hours = 0
+
+        if mins:
+            mins = abs(int(mins))
+        else:
+            mins = 0
+
         return hours * 60 + mins, 0, None
     except:
-        return None, 1, "Wrong time format: {}. Accepted format: 1h15".format(s)
+        return None, 1, "Wrong time supplied: '{}'. Examples of accepted values: 1h15, 15, 3h".format(s)
 
 
 #-------------------------------------------------------------------
