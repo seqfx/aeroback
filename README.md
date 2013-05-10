@@ -1,7 +1,7 @@
 Aeroback
 ========
-Backup/migrate your data to Amazon S3 and Google Storage
-----------------------------------------------------
+Migrate/backup your data to Amazon S3 and Google Storage
+--------------------------------------------------------
 Backup or move your server data or desktop files to Amazon S3 or Google Storage. This Python 2.7 script is easily configurable and supports compressed and incremental directory backup/migration to cloud storages.
 
 Why this script?
