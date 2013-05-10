@@ -12,9 +12,9 @@ My server has accumulated a lot of GB of data that I needed to store long term. 
 
 ###Main features:
 * Set limit of upload amount per session
-* Neatly organizes several machines' backups in the same bucket
-* Easily configurable via simple .ini file(s)
-* Recognizes machine it is being run on (all configs in one location)
+* Neatly organizes several machines' backups in the same storage bucket
+* Easily configurable via simple `.ini` files
+* Recognizes machine it is being run on (all configs are in one location)
 * Emails detailed report when done (optional)
 
 ###Supported backup types:
@@ -257,6 +257,8 @@ One or two storages can be used simultaneously. Example:
 `excludes` is a list of subdirectories to exclude from backup. Only considered if `includes` list is empty
 
 `description` is a free text, not currently used anywhere
+
+Temporary files and directories are skipped during incremental backup. Currently the script skips files like: `.hello.txt`, `~hello.txt` and `hello.txt~`. Flexible regex configuration for each backup will be added very soon. Stay tuned.
 
 Compressed Directory Backup
 ---------------------------
