@@ -328,8 +328,10 @@ def _exec_backup_type(state, storstate, params, dir_temp):
             traceback.print_exc(file=sys.stdout)
             return 0, None
 
-    # Build backup summary only if at least 1 file was transferred
-    if backrstate.total_stored_files:
+    # Build backup summary only if
+    # at least 1 file was transferred
+    # or errors/warnings present
+    if backrstate.total_stored_files or backrstate.get_msgs_warning() or backrstate.get_msgs_error():
         # Increase global file counter
         state.total_stored_files += backrstate.total_stored_files
         # Add summary for this backup
@@ -518,6 +520,56 @@ def _validate_jobs(jobs):
 
 
 #-----------------------------------------------------------------------
+# Execute logic
+#-----------------------------------------------------------------------
+def _execute(state):
+    # Read backup config files
+    err, msg = _execute_config(state)
+    if err:
+        _D.ERROR(
+                __name__,
+                "Error reading job config",
+                'msg', msg
+                )
+        return 0, None
+
+    # If no matching jobs then finish
+    if not state.jobs:
+        _D.WARNING(
+                __name__,
+                "No matching backup jobs found, exiting"
+                )
+        return 0, None
+
+    # Check jobs do not step on each other
+    err, msg = _validate_jobs(state.jobs)
+    if err:
+        _D.ERROR(
+                __name__,
+                "Error validating jobs",
+                'msg', msg
+                )
+        return 0, None
+
+    # Empty temp directory before executing jobs
+    fsutil.empty_dir(state.model.dir_temp)
+
+    # Execute each job
+    i = 0
+    for job in state.jobs:
+        i += 1
+        err, msg = _exec_job(state, job, i, len(state.jobs))
+        if err:
+            _D.ERROR(
+                    __name__,
+                    "Error executing job",
+                    'msg', msg
+                    )
+    # Done
+    return 0, None
+
+
+#-----------------------------------------------------------------------
 # Execute module
 #-----------------------------------------------------------------------
 def execute(state):
@@ -549,43 +601,18 @@ def execute(state):
             'app',
             {'last_run_time': state.model.date, 'running_bool': True})
 
-    # Read backup config files
-    err, msg = _execute_config(state)
-    if err:
-        _D.ERROR(
-                __name__,
-                "Error reading job config",
-                'msg', msg
-                )
-        return 0, None
-
-    # If no matching jobs then finish
-    if not state.jobs:
-        _D.WARNING(
-                __name__,
-                "No matching backup jobs found, exiting"
-                )
-        return 0, None
-
-    # Check jobs do not step on each other
-    err, msg = _validate_jobs(state.jobs)
-    if err:
-        return 1, msg
-
-    # Empty temp directory before executing jobs
-    fsutil.empty_dir(state.model.dir_temp)
-
-    # Execute each job
-    i = 0
-    for job in state.jobs:
-        i += 1
-        err, msg = _exec_job(state, job, i, len(state.jobs))
-        if err:
-            _D.ERROR(
-                    __name__,
-                    "Error executing job",
-                    'msg', msg
-                    )
+    # Execute main logic inside try-catch because
+    # we need to mark execution as finished
+    # regardless of exception
+    try:
+        err, msg = _execute(state)
+    except Exception as e:
+        # Update runlog with app finish
+        runlogr.set_section(
+                state.states.runlogr,
+                'app',
+                {'running_bool': False})
+        raise e
 
     # Update runlog with app finish
     runlogr.set_section(
@@ -600,10 +627,16 @@ def execute(state):
 # Report needed ?
 #-----------------------------------------------------------------------
 def report_needed(state):
+    # If any errors happened then report
+    if _D.count_exceptions() or _D.count_errors() or _D.count_warnings():
+        return True
+
+    # If some files were stored then report
     if state.total_stored_files:
         return True
-    else:
-        return False
+
+    # Otherwise don't report
+    return False
 
 
 #-----------------------------------------------------------------------
