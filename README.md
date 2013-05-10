@@ -8,7 +8,7 @@ Why this script?
 ----------------
 My server has accumulated a lot of GB of data that I needed to store long term. However, the problem was my server's monthly bandwidth allowance which I couldn't exceed.
 
-**Aeroback migrates data in installments that you control.** This allows for a gradual transition to the cloud storage while keeping your server running and receiving new data.
+**Aeroback migrates data in instalments that you control.** This allows for a gradual transition to the cloud storage while keeping your server running and receiving new data.
 
 ###Main features:
 * Set limit of upload amount per session
@@ -89,7 +89,7 @@ Initially the config directory only has `EXAMPLES` subdirectory. Your need to us
 
 **If any of these files files are absent the script will not run.**
 
-`aeroback.config` is the place to put configuration files for one or several machines. Aeroback will execute only relevant configuratons. This approach makes it easier to setup several machine backups. For example, one for your development box and another for a server.
+`aeroback.config` is the place to put configuration files for one or several machines. Aeroback will execute only relevant configurations. This approach makes it easier to setup several machine backups. For example, one for your development box and another for a server.
 
 Each setup is an `.ini` file usually following this naming convention `_home_<your_username>.ini`.
 *Important: * to ignore some config files prepend their name with `OFF`, for example `OFF_home_ben.ini`.
@@ -154,7 +154,7 @@ Email configuration looks like so:
      to = 
      subject = Backup: alex_server
 ```
-`[identities]` contain list of idenitifying directories for different machines.
+`[identities]` contain list of identifying directories for different machines.
 
 `[email:*]` is the master setup which will be applied to every machine provided there will be no further overriding
 
@@ -170,16 +170,16 @@ Execute shell command
 ####As a cron job
 Edit cron file via `crontab -e` and add
 ```
-# Backup via AeroBack
+# Backup via Aeroback
 0 */8 * * * <your_homedir>/aeroback/aeroback/aeroback.py
 ```
 This example will run Aeroback every 8 hours.
 
-Controlling of backup execution frequency
------------------------------------------
-Each backup can have an optional `frequency` parameter that designates minimum period since last execution of that particulat backup type after which backup may be executed again. To put it simpler, how often you want this backup to run.
-Accepted values are hours and minutes separated by 'h'. For example, 0h15, 1h00, 3h15.
-This option allows for finer granularity. You may want your MongoDB backups to run every 4h, while incremental backup needs to run every hour. Achieve this by setting `frequency` option for each backup type and set crontab to the smallest slice of time. **Important:** Aeroback will not run if previous backup hasn't finished.
+Controlling backup execution frequency
+--------------------------------------
+Each backup can have an optional `frequency` parameter that designates minimum period since last execution of that particular backup type after which the backup may be executed again. To put it simpler, how often you want this backup to run.
+Accepted values are hours and minutes separated by 'h'. For example, 0h15, 1h00, 3h15, 4h or even 120 are all valid values.
+This option allows for finer granularity. You may want your MongoDB backups to run every 4h, while incremental backup needs to run every hour. Achieve this by setting `frequency` option for each backup type and set crontab to the smallest slice of time. **Important:** Aeroback will not run if previous backup hasn't finished. It makes sense to use shorter crontab intervals like `0 */1 * * *` meaning run each hour. This way the script will try again in one hour.
 
 
 Detailed Configuration guide
@@ -232,7 +232,7 @@ One or two storages can be used simultaneously. Example:
 ```
 `active` turns backup on/off
 
-`dirstorage` is a directory inside `<storage_bucket>/<storage_dirstorage>` speficied in `[storage_*]` sections
+`dirstorage` is a directory inside `<storage_bucket>/<storage_dirstorage>` specified in `[storage_*]` sections
 
 `dir` is a backup directory on local disk
 
@@ -246,7 +246,7 @@ One or two storages can be used simultaneously. Example:
 
 Compressed Directory Backup
 ---------------------------
-**This configuration section can be repeated several times for different directories.** A single directory or multpiple directories gets compressed and time stamp added. Handy for keeping a history of multiple versions. For example:
+**This configuration section can be repeated several times for different directories.** A single directory or multiple directories gets compressed and time stamp added. Handy for keeping a history of multiple versions. For example:
 ```
 [backup_dir_compress]         
     active = true
@@ -259,7 +259,7 @@ Compressed Directory Backup
 ```
 `active` turns backup on/off
 
-`dirstorage` is a directory inside `<storage_bucket>/<storage_dirstorage>` speficied in `[storage_*]` sections
+`dirstorage` is a directory inside `<storage_bucket>/<storage_dirstorage>` specified in `[storage_*]` sections
 
 `history` is a number of older versions to be kept (integer). If no history provided then ALL versions will be preserved.
 
@@ -292,7 +292,7 @@ For example:
 ```
 `active` turns backup on/off
 
-`dirstorage` is a directory inside `<storage_bucket>/<storage_dirstorage>` speficied in `[storage_*]` sections
+`dirstorage` is a directory inside `<storage_bucket>/<storage_dirstorage>` specified in `[storage_*]` sections
 
 `history` is a number of older versions to be kept (integer). If no history provided then ALL versions will be preserved.
 
@@ -300,10 +300,44 @@ For example:
 
 `description` is a free text, not currently used anywhere
 
+Aeroback .work directory
+------------------------
+This is a directory automatically created inside the `aeroback` folder. It contains:
+* `log` directory where last N of plain text logs stored
+* `diag` directory where last log formatted as HTML is stored
+* `temp` directory that the script uses for its work (creating zipped files, etc.)
+* `runlog.ini` file where the latest executions are logged along with times
+
 Development options
 -------------------
+###Dry mode
 Aeroback can be run in a 'dry' mode meaning no actual data will be send to/from the storages. It's a good way to test that your configuration is working before attempting to send any data. Run the script with `-dry` option:
 `<your_homedir>/aeroback/aeroback/aeroback.py -dry`
+
+###Finer configuration
+File `core.ini` contains some settings that you can change:
+* locations of `aeroback.config` and `aeroback.work` directories
+* number of historical versions for log files
+
+###If Aeroback refuses to run
+This may happen if previous run did not clear its `running` flag. In this case either delete or manually edit file `aeroback.work/runlog.ini` and change all `running = True` to `running = False`. For example:
+```ini
+[app]
+running = False
+last_run = Fri May 10 12:52:09 2013
+
+[dir_increment:data/video]
+running = False
+last_run = Thu May 09 22:18:57 2013
+
+[dir_increment:data/audio]
+running = False
+last_run = Thu May 09 22:54:16 2013
+
+[db_mongo:mongo]
+running = False
+last_run = Fri May 10 09:11:36 2013
+```
 
 The End
 -------
