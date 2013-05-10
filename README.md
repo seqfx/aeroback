@@ -35,7 +35,7 @@ For example:
     active = true
     dirstorage = data/sound
     dir = /home/alex/data/sound
-    maxupload = 1g
+    maxupload = 100M
     includes =
     excludes = 
             work/temp
