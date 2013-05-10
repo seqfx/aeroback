@@ -87,6 +87,8 @@ class State(A_State):
         self.archive_filename = None
         self.archive_filepath = None
 
+        self.total_stored_files = 0
+
     def debug_vars(self):
         return [
                 'archive_filename', self.archive_filename,
@@ -283,6 +285,7 @@ def _store_archive(state):
     if err:
         return 1, "Error storing archive: {}".format(msg)
 
+    state.total_stored_files += 1
     size = os.stat(state.archive_filepath).st_size
     state.set_stats('Uploaded', fmtutil.byte_size(size))
 

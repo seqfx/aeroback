@@ -98,6 +98,8 @@ class State(A_State):
         self.model = model
         self.states = States()
 
+        self.total_stored_files = 0
+
     def debug_vars(self):
         return []
 
@@ -503,6 +505,7 @@ def _store(state):
         else:
             # Update DB on file store success
             print "\t+ ", filepath
+            state.total_stored_files += 1
             dbr.add_update_storage_file(state.states.dbr, filepath, modified, size)
             i += 1
             total_size += size

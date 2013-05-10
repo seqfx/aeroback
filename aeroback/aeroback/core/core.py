@@ -113,6 +113,9 @@ class State(A_State):
         # Params
         self.params = {}
 
+        # Misc
+        self.report_needed = False
+
     def debug_vars(self):
         return [
                 'app', self.name,
@@ -356,6 +359,9 @@ def execute_app(state):
                     'msg', msg
                     )
 
+        # Check if reporting is needed
+        state.report_needed = app.report_needed(appstate)
+
         # Cleanup app
         app.cleanup(appstate)
 
@@ -372,6 +378,65 @@ def execute_app(state):
 
     finally:
         return err, msg
+
+
+#-----------------------------------------------------------------------
+# Email report
+#-----------------------------------------------------------------------
+def _email_report(state, diagrstate, htmlrstate):
+    # Email HTML log
+    emailrstate = state.states.emailr
+    emailrparams = state.params.get('emailr', None)
+    if not emailrstate or not emailrparams or not diagrstate:
+        return
+
+    # Subject
+    stats = []
+    stats.append(emailrparams['subject'])
+    stats.append('|')
+
+    if diagrstate.count_err == 0 and diagrstate.count_warn == 0 and diagrstate.count_exc == 0:
+        stats.append("OK")
+    else:
+        if diagrstate.count_err > 0:
+            stats.append("ERR={}".format(diagrstate.count_err))
+
+        if diagrstate.count_exc > 0:
+            stats.append("EXC={}".format(diagrstate.count_exc))
+
+        if diagrstate.count_warn > 0:
+            stats.append("WARN={}".format(diagrstate.count_warn))
+
+    stats.append('|')
+    stats.append(state.datetime.strftime('%H:%M, %a, %d %b %Y'))
+    subject = ' '.join(stats)
+
+    # Read message
+    with open(htmlrstate.log_filepath) as f:
+        messages = {
+                'text/html': f.read()
+                }
+
+    # Attachments: none
+    attachments = None
+
+    # Send email
+    err, msg = emailr.execute(
+            emailrstate,
+            emailrparams.get('from', None),
+            emailrparams.get('to', None),
+            subject,
+            messages,
+            attachments
+            )
+    if err:
+        _D.ERROR(
+                __name__,
+                "Error in emailer",
+                'msg', msg
+                )
+
+    emailr.cleanup(emailrstate)
 
 
 #-----------------------------------------------------------------------
@@ -397,63 +462,15 @@ def cleanup(state):
     # Cleanup diagnostics HTML log
     htmlrstate = state.states.htmlr
     if htmlrstate:
-
         # Close HTML log
         htmlr.cleanup(htmlrstate)
         # >>> _D.XXXX calls after this point WILL NOT be saved to emailed log <<<
 
-        # Email HTML log
-        emailrstate = state.states.emailr
-        emailrparams = state.params.get('emailr', None)
-        if emailrstate and emailrparams:
-
-            # Subject
-            stats = []
-            stats.append(emailrparams['subject'])
-            stats.append('|')
-
-            if diagrstate.count_err == 0 and diagrstate.count_warn == 0 and diagrstate.count_exc == 0:
-                stats.append("OK")
-            else:
-                if diagrstate.count_err > 0:
-                    stats.append("ERR={}".format(diagrstate.count_err))
-
-                if diagrstate.count_exc > 0:
-                    stats.append("EXC={}".format(diagrstate.count_exc))
-
-                if diagrstate.count_warn > 0:
-                    stats.append("WARN={}".format(diagrstate.count_warn))
-
-            stats.append('|')
-            stats.append(state.datetime.strftime('%H:%M, %a, %d %b %Y'))
-            subject = ' '.join(stats)
-
-            # Read message
-            with open(htmlrstate.log_filepath) as f:
-                messages = {
-                        'text/html': f.read()
-                        }
-
-            # Attachments: none
-            attachments = None
-
-            # Send email
-            err, msg = emailr.execute(
-                    emailrstate,
-                    emailrparams.get('from', None),
-                    emailrparams.get('to', None),
-                    subject,
-                    messages,
-                    attachments
-                    )
-            if err:
-                _D.ERROR(
-                        __name__,
-                        "Error in emailer",
-                        'msg', msg
-                        )
-
-            emailr.cleanup(emailrstate)
+        # Email HTML log if app requested so
+        if state.report_needed:
+            _email_report(state, diagrstate, htmlrstate)
+        else:
+            _D.WARNING(__name__, "Email report NOT requested")
 
     # Summary of app errors and warnings
     _D.DEBUG(

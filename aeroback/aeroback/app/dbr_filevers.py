@@ -261,5 +261,12 @@ def execute(state):
 def cleanup(state):
     '''Cleanup state'''
 
+    # Vacuum DB to minimize size
+    c = state.db_conn.cursor()
+    if c:
+        sql = "VACUUM"
+        c.execute(sql)
+        state.db_conn.commit()
+
     # Disconnect DB
     _disconnect(state)

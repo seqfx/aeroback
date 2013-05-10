@@ -83,6 +83,7 @@ class State(A_State):
         self.states = States()
 
         self.jobs = []
+        self.total_stored_files = 0
 
     def debug_vars(self):
         return [
@@ -327,15 +328,19 @@ def _exec_backup_type(state, storstate, params, dir_temp):
             traceback.print_exc(file=sys.stdout)
             return 0, None
 
-    # Build backup summary
-    _D.SUMMARY(
-            backrstate.get_description(),
-            backrstate.get_descriptors(),
-            backrstate.get_stats(),
-            backrstate.get_msgs_info(),
-            backrstate.get_msgs_warning(),
-            backrstate.get_msgs_error()
-            )
+    # Build backup summary only if at least 1 file was transferred
+    if backrstate.total_stored_files:
+        # Increase global file counter
+        state.total_stored_files += backrstate.total_stored_files
+        # Add summary for this backup
+        _D.SUMMARY(
+                backrstate.get_description(),
+                backrstate.get_descriptors(),
+                backrstate.get_stats(),
+                backrstate.get_msgs_info(),
+                backrstate.get_msgs_warning(),
+                backrstate.get_msgs_error()
+                )
     return 0, None
 
 
@@ -348,7 +353,7 @@ def _time_to_run(last_run, now, period):
     if not period:
         return True
     period = datetime.timedelta(minutes = period)
-    return last_run + period > now
+    return now > last_run + period
 
 
 #-----------------------------------------------------------------------
@@ -589,6 +594,16 @@ def execute(state):
             {'running_bool': False})
 
     return 0, None
+
+
+#-----------------------------------------------------------------------
+# Report needed ?
+#-----------------------------------------------------------------------
+def report_needed(state):
+    if state.total_stored_files:
+        return True
+    else:
+        return False
 
 
 #-----------------------------------------------------------------------
