@@ -179,7 +179,7 @@ Controlling backup execution frequency
 --------------------------------------
 Each backup can have an optional `frequency` parameter that designates minimum period since last execution of that particular backup type after which the backup may be executed again. To put it simpler, how often you want this backup to run.
 
-Accepted values are hours and minutes separated by 'h'. For example, 0h15, 1h00, 3h15, 4h or even 120 are all valid values.
+Accepted values are hours and minutes separated by `h` or `H`. For example, `0h15`, `1h00`, `3h15`, `4h` or even `120` (for minutes only) are all valid values.
 
 This option allows for finer granularity. You may want your MongoDB backups to run every 4h, while incremental backup needs to run every hour. Achieve this by setting `frequency` option for each backup type and set crontab to the smallest slice of time. 
 
