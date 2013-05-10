@@ -178,8 +178,12 @@ This example will run Aeroback every 8 hours.
 Controlling backup execution frequency
 --------------------------------------
 Each backup can have an optional `frequency` parameter that designates minimum period since last execution of that particular backup type after which the backup may be executed again. To put it simpler, how often you want this backup to run.
+
 Accepted values are hours and minutes separated by 'h'. For example, 0h15, 1h00, 3h15, 4h or even 120 are all valid values.
-This option allows for finer granularity. You may want your MongoDB backups to run every 4h, while incremental backup needs to run every hour. Achieve this by setting `frequency` option for each backup type and set crontab to the smallest slice of time. **Important:** Aeroback will not run if previous backup hasn't finished. It makes sense to use shorter crontab intervals like `0 */1 * * *` meaning run each hour. This way the script will try again in one hour.
+
+This option allows for finer granularity. You may want your MongoDB backups to run every 4h, while incremental backup needs to run every hour. Achieve this by setting `frequency` option for each backup type and set crontab to the smallest slice of time. 
+
+**Important: Aeroback will not run if previous backup hasn't finished.** It makes sense to use shorter crontab intervals like `0 */1 * * *` meaning run each hour. This way the script will try again in one hour.
 
 
 Detailed Configuration guide
