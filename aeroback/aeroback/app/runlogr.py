@@ -107,15 +107,15 @@ def _get_parser(filepath):
 def _encode_item(state, key, value):
     """
     Encodes value to string according to key suffix:
-        xxx_bool ---> str(value)
-        xxx_time ---> strftime(value)
+        xxx<bool> ---> str(value)
+        xxx<time> ---> strftime(value)
         all others ---> str(value)
     """
-    if key.endswith('_bool'):
-        return key[:len(key) - len('_bool')], str(value)
+    if key.endswith('<bool>'):
+        return key[:len(key) - len('<bool>')], str(value)
 
-    if key.endswith('_time'):
-        return key[:len(key) - len('_time')], value.strftime(state.model.time_fmt)
+    if key.endswith('<time>'):
+        return key[:len(key) - len('<time>')], value.strftime(state.model.time_fmt)
 
     return key, str(value)
 
@@ -126,15 +126,15 @@ def _encode_item(state, key, value):
 def _decode_item_name(key):
     """
     Decodes key name by removing its suffix:
-        xxx_bool ---> xxx
-        xxx_time ---> xxx
+        xxx<bool> ---> xxx
+        xxx<time> ---> xxx
         all others ---> key
     """
-    if key.endswith('_bool'):
-        return key[:len(key) - len('_bool')]
+    if key.endswith('<bool>'):
+        return key[:len(key) - len('<bool>')]
 
-    if key.endswith('_time'):
-        return key[:len(key) - len('_time')]
+    if key.endswith('<time>'):
+        return key[:len(key) - len('<time>')]
 
     return key
 
@@ -146,13 +146,13 @@ def _decode_item(state, key, value):
     if not value:
         return None
 
-    if key.endswith('_bool'):
-        if value.lower == 'true':
+    if key.endswith('<bool>'):
+        if value.lower() == 'true':
             return True
         else:
             return False
 
-    if key.endswith('_time'):
+    if key.endswith('<time>'):
         return datetime.strptime(value, state.model.time_fmt)
 
     return value

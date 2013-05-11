@@ -57,6 +57,7 @@ class State(A_State):
 
         self.db_conn_upload = None
         self.db_curs_upload = None
+        self.db_count_upload = None
 
     def debug_vars(self):
         return [
@@ -323,6 +324,7 @@ def add_update_storage_file(state, filepath, modified, size):
     if not state.db_conn_upload or not state.db_curs_upload:
         state.db_conn_upload = db_iface.db_open(state.model.filepath)
         state.db_curs_upload = state.db_conn_upload.cursor()
+        state.db_count_upload = 0
 
     sql = "INSERT OR REPLACE INTO files_storage \
           (name, modified, size) VALUES('{}','{}','{}') \
@@ -330,11 +332,17 @@ def add_update_storage_file(state, filepath, modified, size):
 
     state.db_curs_upload.execute(sql)
 
+    # Commit after 50 queries
+    state.db_count_upload += 1
+    if state.db_count_upload > 50:
+        state.db_conn_upload.commit()
+        state.db_count_upload = 0
+
 
 #-----------------------------------------------------------------------
 # Commit all storage files adds
 #-----------------------------------------------------------------------
-def commit_added_storage_files(state):
+def finish_adding_storage_files(state):
     """
     """
     # Secondary connection must be open

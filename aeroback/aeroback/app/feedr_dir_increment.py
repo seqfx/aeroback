@@ -512,7 +512,7 @@ def _store(state):
 
     # Commit all added storage files, if any stores happened
     if i:
-        dbr.commit_added_storage_files(state.states.dbr)
+        dbr.finish_adding_storage_files(state.states.dbr)
         dbr.add_stats(state.states.dbr, state.model.date_str, total_size)
 
     # Dump stats

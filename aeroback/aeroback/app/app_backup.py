@@ -266,13 +266,11 @@ def _execute_config(state):
 # Execute backup type
 #-----------------------------------------------------------------------
 def _exec_backup_type(state, storstate, params, dir_temp):
-    '''
     _D.DEBUG(
             __name__,
             "Backup",
             'params', params
             )
-    '''
 
     # Import and execute corresponding backupr type
     try:
@@ -349,13 +347,58 @@ def _exec_backup_type(state, storstate, params, dir_temp):
 #-----------------------------------------------------------------------
 # Execute job
 #-----------------------------------------------------------------------
-def _time_to_run(last_run, now, period):
+def __time_to_run(last_run, now, period):
     if not last_run:
         return True
     if not period:
         return True
     period = datetime.timedelta(minutes = period)
     return now > last_run + period
+
+
+def _time_to_run(atype, last_run, now, period):
+    res = __time_to_run(last_run, now, period)
+    _D.DEBUG(
+            __name__,
+            "TIME TO RUN ?",
+            'backup type', atype,
+            'answer', res,
+            'last_run', last_run,
+            'now', now,
+            'period', period
+            )
+    return res
+
+
+#-----------------------------------------------------------------------
+# Update runlog on finish
+#-----------------------------------------------------------------------
+def _runlog_update_finish(state, section_name, err_bool):
+    """
+    Update runlog.ini file with finishing parameters
+    """
+    #TODO make time count from value in section
+    # if section is absent, count from current app start
+    #...
+    start = runlogr.get_section_item(
+                state.states.runlogr, section_name, 'last_run<time>')
+    if not start:
+        start = state.model.date
+
+    now = datetime.datetime.today()
+    duration = now - start
+    duration = int(duration.total_seconds())
+    duration = str(datetime.timedelta(seconds = duration))
+
+    runlogr.set_section(
+            state.states.runlogr,
+            section_name,
+            {
+                'running<bool>': False,
+                'err<bool>': err_bool,
+                'finish<time>': now,
+                'duration': duration
+            })
 
 
 #-----------------------------------------------------------------------
@@ -418,18 +461,24 @@ def _exec_job(state, job, job_n, jobs_count):
             # Check previous backup finished
             section_name = "{}:{}".format(backup['type'], backup['dirstorage'])
             running = runlogr.get_section_item(
-                    state.states.runlogr, section_name, 'running_bool')
+                    state.states.runlogr, section_name, 'running<bool>')
             if running:
-                msg = "Previous run of the backup is still marked as running. If you believe that's not the case then manually change in section [{}] paramter 'running' to False in file: {}".format(runlogr.get_filepath(state.states.runlogr))
+                msg = "Previous run of the backup is still marked as running. If you believe that's not the case then manually change in section [{}] parameter 'running' to False in file: {}".format(backup['type'], runlogr.get_filepath(state.states.runlogr))
                 state.add_msg_error(msg)
-                _D.ERROR(__name__, "Another instance may still be running", 'msg', msg)
+                _D.ERROR(
+                        __name__,
+                        "Previous run of backup not yet finished",
+                        'backup type', backup['type'],
+                        'distorage', backup['dirstorage'],
+                        'msg', msg)
                 continue
 
             # Check if time to run
             # _time_to_run(last_run, now, period):
             if not _time_to_run(
+                    backup['type'],
                     runlogr.get_section_item(
-                        state.states.runlogr, section_name, 'last_run_time'),
+                        state.states.runlogr, section_name, 'last_run<time>'),
                     state.model.date,
                     backup.get('frequency', None)):
                 # Time hasn't come yet, skip this backup
@@ -439,9 +488,10 @@ def _exec_job(state, job, job_n, jobs_count):
             runlogr.set_section(
                     state.states.runlogr,
                     section_name,
-                    {'last_run_time': state.model.date, 'running_bool': True})
+                    {'last_run<time>': state.model.date, 'running<bool>': True})
 
             # Run backup on each storage
+            errs = False
             for storstate in job['storstates']:
                 # Create unique temp directory inside dir_temp
                 dir_temp = tempfile.mkdtemp(dir = state.model.dir_temp)
@@ -451,6 +501,7 @@ def _exec_job(state, job, job_n, jobs_count):
                 fsutil.remove_dir_tree(dir_temp)
 
                 if err:
+                    errs = True
                     _D.ERROR(
                             __name__,
                             "Error executing backup",
@@ -459,11 +510,8 @@ def _exec_job(state, job, job_n, jobs_count):
                             )
                     continue
 
-            # Update runlog with app finish
-            runlogr.set_section(
-                    state.states.runlogr,
-                    section_name,
-                    {'running_bool': False})
+            # Update runlog with backup finish
+            _runlog_update_finish(state, section_name, err_bool = errs)
 
     # ... done backup jobs ...
 
@@ -588,9 +636,11 @@ def execute(state):
         return 0, None
 
     # Check if last run completed
-    running = runlogr.get_section_item(state.states.runlogr, 'app', 'running_bool')
+    running = runlogr.get_section_item(state.states.runlogr, 'app', 'running<bool>')
+
+    # Disallow to run if another instance is active
     if running:
-        msg = "Oops, exiting. Another instance of Aeroback is still marked as running. If you believe that's not the case then manually change in section [app] paramter 'running' to False in file: {}".format(runlogr.get_filepath(state.states.runlogr))
+        msg = "Oops, exiting. Another instance of Aeroback is still marked as running. If you believe that's not the case then manually change in section [app] parameter 'running' to False in file: {}".format(runlogr.get_filepath(state.states.runlogr))
         state.add_msg_error(msg)
         _D.ERROR(__name__, "Another instance may still be running", 'msg', msg)
         return 0, None
@@ -599,27 +649,21 @@ def execute(state):
     runlogr.set_section(
             state.states.runlogr,
             'app',
-            {'last_run_time': state.model.date, 'running_bool': True})
+            {'last_run<time>': state.model.date, 'running<bool>': True})
 
     # Execute main logic inside try-catch because
     # we need to mark execution as finished
     # regardless of exception
     try:
         err, msg = _execute(state)
-    except Exception as e:
+
+    except:
+        _D.EXCEPTION(__name__, "Exception executing app")
         # Update runlog with app finish
-        runlogr.set_section(
-                state.states.runlogr,
-                'app',
-                {'running_bool': False})
-        raise e
+        _runlog_update_finish(state, 'app', err_bool = True)
 
     # Update runlog with app finish
-    runlogr.set_section(
-            state.states.runlogr,
-            'app',
-            {'running_bool': False})
-
+    _runlog_update_finish(state, 'app', err_bool = False)
     return 0, None
 
 
@@ -634,6 +678,11 @@ def report_needed(state):
     # If some files were stored then report
     if state.total_stored_files:
         return True
+
+    # NOTE
+    # FOR NOW ALWAYS SAY "YES"
+    # NEED THIS FOR DEBUGGING
+    return True
 
     # Otherwise don't report
     return False
