@@ -310,7 +310,15 @@ def get_files_upload(state):
 
     sql = "SELECT * FROM files_upload"
     c.execute(sql)
-    return c
+
+    result = []
+    for row in c:
+        #filepath = row[0]
+        #modified = row[1]
+        #size = row[2]
+        result.append({'filepath': row[0], 'modified': row[1], 'size': row[2]})
+
+    return result
 
 
 #-----------------------------------------------------------------------
@@ -335,7 +343,24 @@ def add_update_storage_file(state, filepath, modified, size):
     # Commit after 50 queries
     state.db_count_upload += 1
     if state.db_count_upload > 50:
-        state.db_conn_upload.commit()
+        try:
+            state.db_conn_upload.commit()
+            _D.DEBUG(
+                    __name__,
+                    "SQLite3 Commited (groups of 50)",
+                    'last file', filepath
+                    )
+        except Exception as e:
+            import sys
+            (exc_type, exc_value, exc_traceback) = sys.exc_info()
+            _D.WARNING(
+                    __name__,
+                    "SQLite3 Error",
+                    'msg', exc_value,
+                    'file', filepath
+                    )
+            raise e
+
         state.db_count_upload = 0
 
 
@@ -352,6 +377,11 @@ def finish_adding_storage_files(state):
                 "Temporary connection for adding storage files must be open"
                 )
         return
+
+    _D.DEBUG(
+            __name__,
+            "SQLite3 Commited less than 50 files"
+            )
 
     state.db_conn_upload.commit()
     state.db_conn_upload.close()

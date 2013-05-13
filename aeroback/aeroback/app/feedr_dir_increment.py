@@ -469,9 +469,12 @@ def _store(state):
     #dir_str_len = len(state.model.directory)
     # Store each file
     for row in rows:
-        filepath = row[0]
-        modified = row[1]
-        size = row[2]
+        #filepath = row[0]
+        #modified = row[1]
+        #size = row[2]
+        filepath = row['filepath']
+        modified = row['modified']
+        size = row['size']
 
         # Extract path that is in between directory and filename
         filedir, filename = fsutil.path_to_body_tail(filepath)
@@ -588,7 +591,7 @@ def cleanup(state):
 
     # Dump DB
     dbr.dump_params(state.states.dbr)
-    dbr.dump_files_storage(state.states.dbr)
+    #dbr.dump_files_storage(state.states.dbr)
 
     # Disconnect DBr
     dbr.cleanup(state.states.dbr)
