@@ -98,7 +98,11 @@ class State(A_State):
         self.model = model
         self.states = States()
 
+        self.total_local_files = 0
+        self.total_local_size = 0
+
         self.total_stored_files = 0
+        self.total_stored_size = 0
 
     def debug_vars(self):
         return []
@@ -283,11 +287,21 @@ def init(date_str, date_int, dir_temp, storstate, params):
 
     # Stats for reporting
     state.set_stats('Stats:', '&nbsp')
-    state.set_stats_category('Uploaded', 'Files count', 0)
-    state.set_stats_category('Uploaded', 'Files size', 0)
-    state.set_stats_category('Tracking DB', 'Size', 0)
-    state.set_stats_category('Local', 'Files count', 0)
-    state.set_stats_category('Local', 'Files size', 0)
+
+    #OK
+    state.set_stats_category('Storage Total', 'Progress', 0)
+    state.set_stats_category('Storage Total', 'Files count', 0)
+    state.set_stats_category('Storage Total', 'Files size', 0)
+
+    state.set_stats_category('Session Uploaded', 'Files count', 0)
+    state.set_stats_category('Session Uploaded', 'Files size', 0)
+
+    #OK
+    state.set_stats_category('Local Total', 'Files count', 0)
+    state.set_stats_category('Local Total', 'Files size', 0)
+
+    #OK
+    state.set_stats_category('Tracking DB', 'DB size', 0)
 
     return state, err, msg
 
@@ -441,8 +455,11 @@ def _scan_local_files(state):
     dbr.dump_files_local(state.states.dbr)
     '''
 
-    state.set_stats_category('Local', 'Files count', count)
-    state.set_stats_category('Local', 'Files size', fmtutil.byte_size(total_size))
+    state.total_local_files = count
+    state.total_local_size = total_size
+
+    state.set_stats_category('Local Total', 'Files count', count)
+    state.set_stats_category('Local Total', 'Files size', fmtutil.byte_size(total_size))
 
     return 0, None
 
@@ -508,7 +525,6 @@ def _store(state):
         else:
             # Update DB on file store success
             print "\t+ ", filepath
-            state.total_stored_files += 1
             dbr.add_update_storage_file(state.states.dbr, filepath, modified, size)
             i += 1
             total_size += size
@@ -521,8 +537,11 @@ def _store(state):
     # Dump stats
     #dbr.dump_stats(state.states.dbr)
 
-    state.set_stats_category('Uploaded', 'Files count', i)
-    state.set_stats_category('Uploaded', 'Files size', fmtutil.byte_size(total_size))
+    state.total_stored_files = i
+    state.total_stored_size = total_size
+
+    state.set_stats_category('Session Uploaded', 'Files count', i)
+    state.set_stats_category('Session Uploaded', 'Files size', fmtutil.byte_size(total_size))
 
     if fails:
         return 1, "Error storing files, aborted after {} failures".format(max_fails)
@@ -593,12 +612,24 @@ def cleanup(state):
     dbr.dump_params(state.states.dbr)
     #dbr.dump_files_storage(state.states.dbr)
 
+    # Get statistics of what's in storage now
+    storfiles, storsize = dbr.stats_storage(state.states.dbr)
+    print '#### STOR FILES', storfiles
+    print '#### STOR SIZE', storsize
+
+    progress = int(float(storsize) / float(state.total_local_size) * 100.0)
+    storsize = fmtutil.byte_size(storsize)
+
+    state.set_stats_category('Storage Total', 'Progress', '{}%'.format(progress))
+    state.set_stats_category('Storage Total', 'Files count', storfiles)
+    state.set_stats_category('Storage Total', 'Files size', storsize)
+
     # Disconnect DBr
     dbr.cleanup(state.states.dbr)
 
     # Get DB file size for statistics
     db_size = fmtutil.byte_size(dbr.get_db_file_size(state.states.dbr))
-    state.set_stats_category('Tracking DB', 'Size', db_size)
+    state.set_stats_category('Tracking DB', 'DB size', db_size)
 
     # Store DB (local --> storage)
     err, msg = storager.store(

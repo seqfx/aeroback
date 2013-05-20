@@ -414,84 +414,106 @@ def add_stats(state, date, size):
 
 
 #-----------------------------------------------------------------------
+# Stored files stats
+#-----------------------------------------------------------------------
+def stats_storage(state):
+    """
+    Returns:
+        - count of all files
+        - total size of all files in bytes
+    """
+    c = state.db_conn.cursor()
+    if not c:
+        return
+
+    sql = "SELECT COUNT(*) AS nrows, SUM(size) AS total FROM files_storage"
+    c.execute(sql)
+    result = c.fetchall()
+    if result:
+        return result[0]
+    else:
+        return 0, 0
+
+
+#-----------------------------------------------------------------------
 # Dump DB
 #-----------------------------------------------------------------------
 def dump_params(state):
-        c = state.db_conn.cursor()
-        if not c:
-            return
+    c = state.db_conn.cursor()
+    if not c:
+        return
 
-        sql = "SELECT * FROM params"
-        c.execute(sql)
+    sql = "SELECT * FROM params"
+    c.execute(sql)
 
-        entries = []
-        for row in c:
-            entries.append("{}\t{}\t{}".format(row[0], row[1], row[2]))
+    entries = []
+    for row in c:
+        entries.append("{}\t{}\t{}".format(row[0], row[1], row[2]))
 
-        _D.DEBUG(
-                __name__,
-                "File Incremental Tracking DB dump",
-                'params', entries
-                )
+    _D.DEBUG(
+        __name__,
+        "File Incremental Tracking DB dump",
+        'params', entries
+        )
 
 
 def dump_files_local(state):
-        c = state.db_conn.cursor()
-        if not c:
-            return
+    c = state.db_conn.cursor()
+    if not c:
+        return
 
-        sql = "SELECT * FROM files_local"
-        c.execute(sql)
+    sql = "SELECT * FROM files_local"
+    c.execute(sql)
 
-        entries = []
-        for row in c:
-            entries.append("{}\t{}\t{}".format(row[2], row[1], row[0]))
+    entries = []
+    for row in c:
+        entries.append("{}\t{}\t{}".format(row[2], row[1], row[0]))
 
-        _D.DEBUG(
-                __name__,
-                "File Incremental Tracking DB dump",
-                'files_local', entries
-                )
+    _D.DEBUG(
+        __name__,
+        "File Incremental Tracking DB dump",
+        'files_local', entries
+        )
 
 
 #-----------------------------------------------------------------------
 def dump_files_storage(state):
-        c = state.db_conn.cursor()
-        if not c:
-            return
+    c = state.db_conn.cursor()
+    if not c:
+        return
 
-        sql = "SELECT * FROM files_storage"
-        c.execute(sql)
+    sql = "SELECT * FROM files_storage"
+    c.execute(sql)
 
-        entries = []
-        for row in c:
-            entries.append("{}\t{}\t{}".format(row[2], row[1], row[0]))
+    entries = []
+    for row in c:
+        entries.append("{}\t{}\t{}".format(row[2], row[1], row[0]))
 
-        _D.DEBUG(
-                __name__,
-                "File Incremental Tracking DB dump",
-                'files_storage', entries
-                )
+    _D.DEBUG(
+        __name__,
+        "File Incremental Tracking DB dump",
+        'files_storage', entries
+        )
 
 
 #-----------------------------------------------------------------------
 def dump_stats(state):
-        c = state.db_conn.cursor()
-        if not c:
-            return
+    c = state.db_conn.cursor()
+    if not c:
+        return
 
-        sql = "SELECT * FROM stats"
-        c.execute(sql)
+    sql = "SELECT * FROM stats"
+    c.execute(sql)
 
-        entries = []
-        for row in c:
-            entries.append("{}\t{}".format(row[0], fmtutil.byte_size(row[1])))
+    entries = []
+    for row in c:
+        entries.append("{}\t{}".format(row[0], fmtutil.byte_size(row[1])))
 
-        _D.DEBUG(
-                __name__,
-                "File Incremental Tracking DB dump",
-                'stats', entries
-                )
+    _D.DEBUG(
+        __name__,
+        "File Incremental Tracking DB dump",
+        'stats', entries
+        )
 
 
 #-----------------------------------------------------------------------
