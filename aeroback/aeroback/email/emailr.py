@@ -88,13 +88,25 @@ def _send(state, msg):
         return
 
     _D.DEBUG(__name__, "Email: sending...")
-    mailer = smtplib.SMTP(state.model.smtp_server, state.model.smtp_port)
-    # EDIT: mailer is already connected
-    # mailer.connect()
-    mailer.login(state.model.user, state.model.password)
-    mailer.sendmail(state.sender, [state.recipient], msg.as_string())
-    mailer.quit()
-    _D.DEBUG(__name__, "Email: sending DONE")
+
+    if state.model.smtp_port is '25':
+        mailer = smtplib.SMTP(
+            state.model.smtp_server, state.model.smtp_port)
+
+    elif state.model.smtp_port is '465':
+        mailer = smtplib.SMTP_SSL(
+            state.model.smtp_server, state.model.smtp_port)
+
+    try:
+        mailer.login(state.model.user, state.model.password)
+        mailer.sendmail(state.sender, [state.recipient], msg.as_string())
+
+    except smtplib.SMTPException as ex:
+        _D.ERROR(__name__, ex)
+
+    finally:
+        mailer.quit()
+        _D.DEBUG(__name__, "Email: sending DONE")
 
 
 #-----------------------------------------------------------------------
