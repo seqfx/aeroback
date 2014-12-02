@@ -90,10 +90,17 @@ def _send(state, msg):
     _D.DEBUG(__name__, "Email: sending...")
 
     if state.model.smtp_port is '25':
+        _D.DEBUG(__name__, "Email: sending via port 25")
         mailer = smtplib.SMTP(
             state.model.smtp_server, state.model.smtp_port)
 
     elif state.model.smtp_port is '465':
+        _D.DEBUG(__name__, "Email: sending via port 465")
+        mailer = smtplib.SMTP_SSL(
+            state.model.smtp_server, state.model.smtp_port)
+    else:
+        _D.DEBUG(__name__, "Email: sending via unspecified port, defaulting to 465")
+        state.model.smtp_port = '465'
         mailer = smtplib.SMTP_SSL(
             state.model.smtp_server, state.model.smtp_port)
 
